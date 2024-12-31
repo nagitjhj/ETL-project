@@ -20,21 +20,27 @@ import java.util.Map;
 public class CSVService {
     private final CSVInsertService csvInsertService;
 
-    public void readCSV(MultipartFile file) throws IOException, CsvValidationException {
+    public void readCSV(MultipartFile file) {
 
-        CSVReader reader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-        String[] headers = reader.readNext(); // 첫줄헤더
-        List<Map<String, String>> rows = new ArrayList<>(); // 로우
+        try (CSVReader reader = new CSVReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));) {
 
-        String[] nextLine;
-        while ((nextLine = reader.readNext()) != null) {
-            Map<String, String> row = new HashMap<>();
-            for (int i = 0; i < headers.length; i++) {
-                row.put(headers[i], nextLine[i]);
+            String[] headers = reader.readNext(); // 첫줄헤더
+            List<Map<String, String>> rows = new ArrayList<>(); // 로우
+
+            String[] nextLine;
+            while ((nextLine = reader.readNext()) != null) {
+                Map<String, String> row = new HashMap<>();
+                for (int i = 0; i < headers.length; i++) {
+                    row.put(headers[i], nextLine[i]);
+                }
+                rows.add(row);
             }
-            rows.add(row);
-        }
 
-        csvInsertService.insertCSV("users", headers, rows);
+            csvInsertService.insertCSV("users", headers, rows);
+
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 }
